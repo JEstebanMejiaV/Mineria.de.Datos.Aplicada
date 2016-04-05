@@ -9,6 +9,10 @@ Juan Esteban Mejía Velásquez
 
 '''
 
+class(Groceries)
+
+## Crear como data.frame
+
 if(!require(arules, quietly=TRUE))install.packages("arules")
 if(!require(arulesViz, quietly=TRUE))install.packages("arulesViz")
 if(!require(RColorBrewer, quietly=TRUE))install.packages("RColorBrewer")
@@ -25,10 +29,7 @@ data(Groceries)  # Trasnsacciones de tienda desde e paquete arules
 
 
 Groceries
-
 class(Groceries)
-
-## Crear como data.frame
 
 items<-as.data.frame(itemLabels(Groceries))
 colnames(items) <- "Item"
@@ -109,7 +110,7 @@ inspect(yogurt[1:5])
 plot(rules, control=list(jitter=2, col = rev(brewer.pal(9, "Greens")[4:9])),
      shading = "lift")  
 
-plot(second.rules, method="grouped",   
+plot(rules, method="grouped",   
      control=list(col = rev(brewer.pal(9, "Greens")[4:9])))
 
 plot(rules[1:10],method="graph",interactive=TRUE)
