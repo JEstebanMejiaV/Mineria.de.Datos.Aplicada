@@ -25,9 +25,9 @@ points(CFC$centers[,c(1,2)], col=1:3, pch=8, cex=2)
 
 CFC$membership[1:3,]
 
-table(iris$Species, result$cluster)
+table(iris$Species, CFC$cluster)
 
-s3d <- scatterplot3d(CFC$membership, color=result$cluster, type="h", 
+s3d <- scatterplot3d(CFC$membership, color=CFC$cluster, type="h", 
                      angle=240, scale.y=0.7, pch=16)
 
 plot(iris, col=CFC$cluster)
@@ -36,7 +36,7 @@ plot(iris, col=CFC$cluster)
 
 ## Multi-guasiana con EM (expectation-Maxiization)
 
-if(!require(psych, quietly=TRUE))install.packages("psych")
+if(!require(mclust, quietly=TRUE))install.packages("mclust")
 
 library(mclust)
 
