@@ -41,9 +41,9 @@ table(IrisT[, 5], Class.KNN)
 
 ## Como elejir el # de K
 
-Exactitud = rep(0,10)
+Exactitud = rep(0,20)
 
- for (i in 1:10) {
+ for (i in 1:20) {
    Class.KNN = knn(IrisE[, -5],IrisT[, -5], IrisE[, 5], i)
    Exactitud[i] = sum(Class.KNN == IrisT[, 5])/nrow(IrisT)
    }
