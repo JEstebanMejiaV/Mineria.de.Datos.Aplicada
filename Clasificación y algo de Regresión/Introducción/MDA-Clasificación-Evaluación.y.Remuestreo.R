@@ -65,6 +65,7 @@ CV.Error <- cv.glm(Auto ,glm.fit )
 
 CV.Error$delta
 
+####
 
 CV.Error <- c()
 
@@ -209,7 +210,125 @@ trainPredictors <- iris[Trainrows, -5]
 trainClasses <- iris[Trainrows,5]
 
 
+### Matriz de Error
 
+library(C50)
+
+library(caret)
+
+
+data(churn)
+
+churnTrain = churnTrain[,! names(churnTrain) %in% c("state","area_code", "account_length") ]
+
+set.seed(123)
+
+ind = sample(2, nrow(churnTrain), replace = TRUE, prob=c(0.7,0.3))
+trainset = churnTrain[ind == 1,]
+testset = churnTrain[ind == 2,]
+
+svm.Modelo = train(churn ~ ., data = trainset,method = "svmRadial")
+
+svm.Pred = predict(svm.Modelo, testset[,! names(testset) %in%c("churn")])
+
+table(testset[,c("churn")], svm.Pred)
+
+confusionMatrix(svm.Pred, testset[,c("churn")])
+
+
+### Ánalsiis ROC
+
+
+install.packages("ROCR")
+
+
+library(ROCR)
+
+library(e1071)
+
+
+svmfit=svm(churn~ ., data=trainset, prob=TRUE)
+
+
+pred=predict(svmfit,testset[, !names(testset) %in% c("churn")],probability=TRUE)
+
+pred.prob = attr(pred, "probabilities")
+
+pred.ROC = pred.prob[, 2]
+
+pred.rocr = prediction(pred.ROC, testset$churn)
+
+perf.rocr = performance(pred.rocr, measure = "auc", x.measure ="cutoff")
+
+perf.tpr.rocr = performance(pred.rocr, "tpr","fpr")
+
+plot(perf.tpr.rocr, colorize=T,main=paste("AUC:",(perf.rocr@y.values)))
+
+as.numeric(performance(pred.rocr, "auc")@y.values)
+
+## Comparación de ROC´s
+
+install.packages("pROC")
+
+library("pROC")
+
+control = trainControl(method = "repeatedcv",
+                       number = 10,
+                       repeats = 3,
+                       classProbs = TRUE,
+                       summaryFunction = twoClassSummary)
+
+glm.model= train(churn ~ .,
+                 data = trainset,
+                 method = "glm",
+                 metric = "ROC",
+                 trControl = control)
+
+svm.model= train(churn ~ .,
+                 data = trainset,
+                 method = "svmRadial",
+                 metric = "ROC",
+                 trControl = control)
+
+rpart.model= train(churn ~ .,
+                   data = trainset,
+                   method = "rpart",
+                   metric = "ROC",
+                   trControl = control)
+
+glm.probs = predict(glm.model, testset[,! names(testset) %in% c("churn")], type = "prob")
+svm.probs = predict(svm.model, testset[,! names(testset) %in% c("churn")], type = "prob")
+rpart.probs = predict(rpart.model, testset[,! names(testset)%in% c("churn")], type = "prob")
+
+
+glm.ROC = roc(response = testset[,c("churn")],
+              predictor =glm.probs$yes,
+              levels = levels(testset[,c("churn")]))
+
+plot(glm.ROC, type="S", col="red")
+
+
+svm.ROC = roc(response = testset[,c("churn")],
+              predictor =svm.probs$yes,
+              levels = levels(testset[,c("churn")]))
+
+plot(svm.ROC, add=TRUE, col="navy")
+
+rpart.ROC = roc(response = testset[,c("churn")],
+                predictor =rpart.probs$yes,
+                levels = levels(testset[,c("churn")]))
+
+plot(rpart.ROC, add=TRUE, col="orange")
+
+
+CV = resamples(list(glm = glm.model, svm=svm.model, rpart
+                           = rpart.model))
+
+summary(CV)
+
+dotplot(CV, metric = "ROC")
+
+bwplot(CV, layout = c(3, 1))
 
 #### Caso de estudio : Scoring Áleman
 
