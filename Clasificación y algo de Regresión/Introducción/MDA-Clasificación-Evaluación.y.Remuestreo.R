@@ -219,6 +219,7 @@ library(caret)
 
 data(churn)
 
+
 churnTrain = churnTrain[,! names(churnTrain) %in% c("state","area_code", "account_length") ]
 
 set.seed(123)
@@ -227,13 +228,56 @@ ind = sample(2, nrow(churnTrain), replace = TRUE, prob=c(0.7,0.3))
 trainset = churnTrain[ind == 1,]
 testset = churnTrain[ind == 2,]
 
+table(trainset$churn)/nrow(trainset)
+
 svm.Modelo = train(churn ~ ., data = trainset,method = "svmRadial")
 
 svm.Pred = predict(svm.Modelo, testset[,! names(testset) %in%c("churn")])
 
-table(testset[,c("churn")], svm.Pred)
+table(testset$churn, svm.Pred)
 
-confusionMatrix(svm.Pred, testset[,c("churn")])
+confusionMatrix(svm.Pred, testset$churn)
+
+# Matriz de Error : Regresión Logistica
+
+Logit.Mod1=glm(churn ~ ., data = trainset,family = "binomial")
+
+
+summary(Logit.Mod)
+
+Logit.Mod2 = step(Logit.Mod)
+
+summary(Logit.Mod2)
+
+Logit.Mod3 = glm(churn ~ international_plan+
+                 voice_mail_plan+total_day_charge+total_eve_minutes+
+                 total_night_charge+total_night_charge+total_intl_calls+
+                 total_intl_charge+number_customer_service_calls,data = trainset,family = "binomial")
+
+summary(Logit.Mod3)
+
+Logit.Pred = predict(Logit.Mod3,  newdata=testset, type="response")
+
+Logit.Pred2 = predict(Logit.Mod1,  newdata=testset, type="response")
+
+table(testset$churn, Logit.Pred > 0.5)
+
+(32+844)/nrow(testset)
+
+table(testset$churn)/nrow(testset)
+
+#
+
+# Tener en cuenta cual es su TRUE. En el caso de fuga de clinetes
+# nuestro TRUE es que "no" se halla fugado
+
+Umbral = 0.5
+
+pred = factor(ifelse(Logit.Pred > Umbral, "no", "yes"))
+
+pred = relevel(pred, "no")   
+
+confusionMatrix(testset$churn,pred)
 
 
 ### Ánalsiis ROC
@@ -244,11 +288,33 @@ install.packages("ROCR")
 
 library(ROCR)
 
-library(e1071)
+library(e1071) # función SVM
 
+## ROC para Logit
+
+#Función de predicción
+
+ROCRpred = prediction(Logit.Pred2 , testset$churn)
+
+# Función de performnce
+
+ROCRperf = performance(ROCRpred, "tpr", "fpr")
+
+# Graficar la curva ROC
+plot(ROCRperf)
+
+# dicionar coores
+plot(ROCRperf, colorize=TRUE)
+
+# Adicionar etiquetas de umbrales
+
+plot(ROCRperf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
+
+
+
+##  ROC para SVM
 
 svmfit=svm(churn~ ., data=trainset, prob=TRUE)
-
 
 pred=predict(svmfit,testset[, !names(testset) %in% c("churn")],probability=TRUE)
 
@@ -260,9 +326,12 @@ pred.rocr = prediction(pred.ROC, testset$churn)
 
 perf.rocr = performance(pred.rocr, measure = "auc", x.measure ="cutoff")
 
-perf.tpr.rocr = performance(pred.rocr, "tpr","fpr")
+ROCRperf = performance(pred.rocr, "tpr","fpr")
 
-plot(perf.tpr.rocr, colorize=T,main=paste("AUC:",(perf.rocr@y.values)))
+plot(ROCRperf, colorize=TRUE,main=paste("AUC:",(perf.rocr@y.values)))
+
+plot(ROCRperf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
+
 
 as.numeric(performance(pred.rocr, "auc")@y.values)
 
