@@ -196,7 +196,6 @@ L <- list(runs=1,sen=t(Importancia$imp),sresponses=Importancia$sresponses)
 
 mgraph(L,graph="IMP",leg=names(iris),col="gray",Grid=10)
 
-?rminer::fit
 
 #####
 

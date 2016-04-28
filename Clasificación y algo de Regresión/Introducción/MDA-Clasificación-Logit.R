@@ -38,6 +38,8 @@ Mlogit2 <- glm(default ~ .-income, data = Default, family = "binomial")
 
 summary(Mlogit2)
 
+
+
 ## Intervalos de confianza usando Log-verosimilitud
 
 confint(Mlogit2)
