@@ -44,6 +44,8 @@ churn.baggingcv = bagging.cv(churn ~ ., v=10, data=trainset,mfinal=10)
 
 churn.baggingcv$confusion
 
+1-churn.baggingcv$error
+
 ## Boosting
 
 set.seed(123)
