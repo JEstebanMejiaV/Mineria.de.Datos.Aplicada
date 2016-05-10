@@ -41,9 +41,9 @@ table(BosquesA.Pred, Testeo$Creditability)
 
 plot(BosquesA) #Graficacion de Error para cada árbol 
 
-importance(BosquesA)# Importancia de los predictores medante diferentes criterios
-                    # Recuesde: que sucederia con la exactitud o el coeficionte de 
-                    # GINI promedio al quirar dicho predictor
+importance(BosquesA) # Importancia de los predictores medante diferentes criterios
+                     # Recuesde: que sucederia con la exactitud o el coeficionte de 
+                     # GINI promedio al quirar dicho predictor
 
 varImpPlot(BosquesA) #Graficación de los resultados anteriores
 

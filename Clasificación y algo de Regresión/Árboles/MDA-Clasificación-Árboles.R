@@ -128,5 +128,15 @@ Predicciones$CART[ProbsCARTtest[,1] >.5] = "large"
 
 summary(Predicciones)
 
+### Bosques Aleatorios
+
+library(randomForest)
+
+BosquesA = randomForest(income  ~ ., data = Entrenamiento, importance =T)
+
+BosquesA
+
+BosquesA.Pred = predict(BosquesA, Test)
+
 
 
