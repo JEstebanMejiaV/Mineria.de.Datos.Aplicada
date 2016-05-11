@@ -37,7 +37,7 @@ setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
 
 ## Extración de Tweets por tópico
 
-Tweets.Paz = searchTwitter("Paz", since='2014-01-01')
+Tweets.Paz = searchTwitter("Paz", since='2014-01-01', until = '2016-05-01')
 
 head(Tweets.Paz, 5)
 
@@ -58,7 +58,7 @@ head(trends)
 ## Ejemplo de Twietero
 
 # recolecta tweets de @camila_vallejo
-tweets = userTimeline("JuanManSantos", 2015)
+tweets = userTimeline("JuanManSantos", 2016)
 
 # vuelca la informacion de los tweets a un data frame
 df = twListToDF(tweets)
@@ -93,9 +93,13 @@ txtclean = gsub("http\\w+", "", txtclean)
 
 corpus = Corpus(VectorSource(txtclean))
 
+
 # convierte a minúsculas
 
 corpus = tm_map(corpus, tolower)
+
+# COnvertir a texto pano
+corpus <- tm_map(corpus, PlainTextDocument)
 
 # remueve palabras vacías (stopwords) en español
 
@@ -114,6 +118,10 @@ corpus = tm_map(corpus, removeWords, sw)
 
 corpus = tm_map(corpus, stripWhitespace)
 
+# remueve finales comunes (especial para Inglés)
+library(SnowballC)   
+corpus <- tm_map(corpus, stemDocument)   
+
 # Inspeccionar el corpues
 
 inspect(corpus[1])
@@ -124,19 +132,82 @@ corpus <- tm_map(corpus, PlainTextDocument)
 
 tdm = TermDocumentMatrix(corpus)
 tdm
+
+freq <- colSums(as.matrix(tdm))   
+
+length(freq)  
+
+ord <- order(freq)   
+
+m <- as.matrix(tdm)   
+dim(m)  
+
+
+#Encontrar la raleza
+
+findFreqTerms(tdm, lowfreq=20)
+
+Raleza = removeSparseTerms(tdm, 0.9)
+
+inspect(Raleza)
+
+head(table(tdm), 20)   
+
 # convierte a una matriz
 
-m = as.matrix(tdm)
+corpus = as.data.frame(as.matrix(tdm))
 
 # conteo de palabras en orden decreciente
 
 wf <- sort(rowSums(m),decreasing=TRUE)
 
+head(wf)
+
 # crea un data frame con las palabras y sus frecuencias
 
 dm <- data.frame(word = names(wf), freq=wf)
-dm
+
+head(dm)
+
+# Graficar la frecuencia de palabras
+
+library(ggplot2)  
+
+
+dm$orden <- reorder(dm$word, dm$freq)# Crear una vaiable de orden para
+                                     # Para uego graficar las baras en orden
+
+p <- ggplot(subset(dm, freq>50), aes(word, freq))  
+
+p <- p + geom_bar(aes(x=orden),stat="identity") #aes(x=orden) es donde le damos
+                                                # el orden
+
+p <- p + theme(axis.text.x=element_text(angle=45, hjust=1))
+
+p
+
 
 # grafica la nube de palabras (wordcloud)
 
-wordcloud(dm$word, dm$freq, random.order=FALSE, colors=brewer.pal(8, "Dark2"))
+wordcloud(dm$word, dm$freq, random.order=FALSE, colors=brewer.pal(5, "Dark2"), min.freq = 15)
+
+
+# Cluster para terminos similares
+
+library(cluster)   
+
+dtmss <- removeSparseTerms(tdm, 0.8)
+
+d <- dist(t(dtmss), method="euclidian")  
+
+fit <- hclust(d=d, method="ward.D")   
+fit 
+plot(fit, hang=-1)   
+
+
+library(fpc)   
+d <- dist(t(dtmss), method="euclidian")   
+kfit <- kmeans(d, 2)   
+clusplot(as.matrix(d), kfit$cluster, color=T, shade=T, labels=2, lines=0)
+
+
