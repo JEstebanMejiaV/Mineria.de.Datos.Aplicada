@@ -189,7 +189,7 @@ p
 
 # grafica la nube de palabras (wordcloud)
 
-wordcloud(dm$word, dm$freq, random.order=FALSE, colors=brewer.pal(5, "Dark2"), min.freq = 15)
+wordcloud(dm$word, dm$freq, random.order=FALSE, colors=brewer.pal(5, "Dark2"), )
 
 
 # Cluster para terminos similares
