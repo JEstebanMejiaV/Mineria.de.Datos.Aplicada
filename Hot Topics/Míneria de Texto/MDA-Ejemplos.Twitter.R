@@ -1,13 +1,4 @@
 
-'''
-Minería de Datos Aplicada
-Universidad Nacional de Colombia
-
-Ejemplos Twitter
-
-Juan Esteban Mejía Velásquez
-
-'''
 
 # cargar librerias
 
