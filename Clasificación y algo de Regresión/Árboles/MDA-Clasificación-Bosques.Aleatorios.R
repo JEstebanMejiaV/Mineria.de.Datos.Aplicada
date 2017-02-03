@@ -12,8 +12,8 @@ url="http://freakonometrics.free.fr/german_credit.csv"
 
 credit=read.csv(url, header = TRUE, sep = ",")
 
-Calitativas=c(1,2,4,5,7,8,9,10,11,12,13,15,16,17,18,19,20)
 
+Calitativas=c(1,2,4,5,7,8,9,10,11,12,13,15,16,17,18,19,20)
 
 
 #convertir a variables  cualitaticas a Factores
@@ -30,6 +30,7 @@ spl = sample.split(credit$Creditability, SplitRatio = 0.7)
 Entrenamiento = subset(credit, spl==TRUE)
 Testeo = subset(credit, spl==FALSE)
 
+Formula <-  as.formula('Creditability  ~ .')
 
 library(randomForest)
 
@@ -160,9 +161,111 @@ Mejormtry
 
 print(TuneRF)
 
+## Tuneado mas avanzado
+
+library(caret)
+
+# Crear modelo con parametros por defecto
+
+metric <- "Accuracy"
+
+set.seed(1234)
+
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+
+tunegrid <- expand.grid(.mtry=Mejormtry)
+
+BosquesA.tune1 <- train(Formula, data=Entrenamiento, method="rf", 
+                    metric=metric, tuneGrid=tunegrid, trControl=control)
+
+BosquesA.tune1
+
+
+#### Variando el mtry
+
+
+# Random Search
+
+set.seed(1234)
+
+mtry <- sqrt(ncol(Entrenamiento))
+
+control <- trainControl(method="repeatedcv", number=10,
+                        repeats=3, search="random")
+
+BosquesA.tune.Aleatorio <- train(Formula, data=Entrenamiento, method="rf",
+                   metric=metric, tuneLength=15, trControl=control)
+
+BosquesA.tune.Aleatorio
+
+plot(BosquesA.tune.Aleatorio)
+
+# busqueda en rejilla
+
+set.seed(1234)
+tunegrid <- expand.grid(.mtry=c(1:15))
+rf_gridsearch <- train(Formula, data=Entrenamiento, 
+                       method="rf", metric=metric, tuneGrid=tunegrid, 
+                       trControl=control)
+print(rf_gridsearch)
+plot(rf_gridsearch)
+
+
+
+# Busqueda Manual
+
+control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
+tunegrid <- expand.grid(.mtry=c(sqrt(ncol(Entrenamiento))))
+Modelos <- list()
+for (ntree in c(100, 150, 200, 250)) {
+  set.seed(1234)
+  
+  Ajuste <- train(Formula, data=Entrenamiento, method="rf", 
+               metric=metric, tuneGrid=tunegrid, trControl=control, 
+               ntree=ntree)
+  
+  key <- toString(ntree)
+  
+  Modelos[[key]] <- Ajuste
+}
+
+# Comparar Resultados
+
+Resultados <- resamples(Modelos)
+summary(Resultados)
+dotplot(Resultados)
+
+
+####
+
+
+customRF <- list(type = "Classification", library = "randomForest", loop = NULL)
+customRF$parameters <- data.frame(parameter = c("mtry", "ntree"), 
+                                  class = rep("numeric", 2), label = c("mtry", "ntree"))
+customRF$grid <- function(x, y, len = NULL, search = "grid") {}
+customRF$fit <- function(x, y, wts, param, lev, last, weights, classProbs, ...) {
+  randomForest(x, y, mtry = param$mtry, ntree=param$ntree, ...)
+}
+customRF$predict <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
+  predict(modelFit, newdata)
+customRF$prob <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
+  predict(modelFit, newdata, type = "prob")
+customRF$sort <- function(x) x[order(x[,1]),]
+customRF$levels <- function(x) x$classes
+
+
+# Entrenar el modelo
+
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+tunegrid <- expand.grid(.mtry=c(1:15), .ntree=c(10, 15, 20, 25))
+set.seed(1234)
+custom <- train(Formula, data=Entrenamiento, method=customRF, metric=metric, tuneGrid=tunegrid, trControl=control)
+summary(custom)
+plot(custom)
 
 
 ### No Superpervisado
+
 library(MASS)
 
 library(mva)
@@ -172,6 +275,9 @@ crabs.prox <- randomForest(dslcrabs, ntree = 1000, proximity = TRUE)$proximity
 crabs.mds <- cmdscale(1 - crabs.prox)
 plot(crabs.mds, col = c("blue", "orange")[codes(crabs$sp)],
      pch = c(1,16)[codes(crabs$sex)], xlab="", ylab="")
+
+
+####
 
 ## Forma Alternativa de computar los Bosques Aleatorios 
 
